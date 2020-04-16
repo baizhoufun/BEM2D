@@ -30,7 +30,7 @@ public:
     const std::vector<double> &dy() const;
     const std::vector<double> &J() const;
     const std::vector<double> &xi() const;
-    const std::vector<std::vector<double>> &basis() const { return _basis; };
+    const std::vector<std::vector<double>> &basis() const;
 };
 
 } // namespace bem2D

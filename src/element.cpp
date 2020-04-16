@@ -84,5 +84,6 @@ const std::vector<double> &Element::dx() const { return _dx; };
 const std::vector<double> &Element::dy() const { return _dy; };
 const std::vector<double> &Element::J() const { return _J; };
 const std::vector<double> &Element::xi() const { return _xi; };
+const std::vector<std::vector<double>> &Element::basis() const { return _basis; };
 
 } // namespace bem2D
