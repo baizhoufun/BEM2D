@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
-#include "quadratureRules.hpp"
+#include "numericTools/quadratureRules.hpp"
 
 using namespace numericTools;
 

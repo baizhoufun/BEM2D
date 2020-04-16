@@ -6,13 +6,14 @@ add_compile_options(-O3)
 set(ROOT ${PROJECT_SOURCE_DIR})
 set(SRC "${ROOT}/src")
 include_directories("${SRC}")
+include_directories("${SRC}/numericTools")
 
 find_package(Eigen3 3.1.0 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-add_library(Quadrature ${SRC}/quadratureRules.cpp)
-add_library(Elliptic ${SRC}/ellipticIntegral.cpp)
-add_library(Legendre ${SRC}/legendrePoly.cpp)
+add_library(Quadrature ${SRC}/numericTools/quadratureRules.cpp)
+add_library(Elliptic ${SRC}/numericTools/ellipticIntegral.cpp)
+add_library(Legendre ${SRC}/numericTools/legendrePoly.cpp)
 
 
 

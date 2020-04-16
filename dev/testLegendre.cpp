@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
-#include "legendrePoly.hpp"
+#include "numericTools/legendrePoly.hpp"
 
 using namespace numericTools;
 

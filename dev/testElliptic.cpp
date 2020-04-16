@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
-#include "ellipticIntegral.hpp"
+#include "numericTools/ellipticIntegral.hpp"
 
 using namespace numericTools;
 

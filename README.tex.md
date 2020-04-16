@@ -10,7 +10,8 @@ $$
 
 subject to boundary conditions imposed on domain boundary $\gamma$ ,
 
-$$\left\{
+$$
+\left\{
 \begin{aligned}
 \phi &= \varphi\quad\textrm{on}\quad \gamma_\mathrm{D}~,\\
 \bm{n}\cdot\nabla\phi &= q\quad\textrm{on}\quad \gamma_\mathrm{N}~,
