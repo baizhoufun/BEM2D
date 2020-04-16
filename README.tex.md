@@ -2,7 +2,7 @@
 
 ## Problem statement
 
-Solve 2D Laplace equation
+Solve 2D Axisymmetric Laplace equation
 
 $$
 \nabla^2\phi = 0\quad\textrm{in}\quad \omega~,
