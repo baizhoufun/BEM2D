@@ -1,0 +1,8 @@
+*.o
+*.a
+*.log
+*.txt
+!CMakeLists.txt
+build/
+resources/.ipynb_checkpoints/
+resources/legacyCode/
