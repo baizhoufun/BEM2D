@@ -2,8 +2,11 @@
 *.a
 *.log
 *.txt
-*.sh
 !CMakeLists.txt
+*.nb
+*.pdf
+*.sh
+*.py
 build/
 resources/.ipynb_checkpoints/
 resources/legacyCode/

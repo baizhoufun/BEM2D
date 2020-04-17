@@ -30,7 +30,7 @@ public:
     const int &elementOrder() const;
     const int &quadratureOrder() const;
     const int &indexShift() const;
-    void nElement(int i);
+
     void elementOrder(int i);
     void indexShift(int i);
     void quadratureOrder(int i);
@@ -47,6 +47,7 @@ public:
     void initialize();
 
 private:
+    void nElement(int i); // never manually set element number, it's determined by spline segments
     size_t nodeToElement(size_t nodeIndex);
     void setSplineBC(int i, spline::BCType bc0, spline::BCType bc1, double a0 = 0, double b0 = 0, double a1 = 0, double b1 = 0);
 };

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.9)
 
-option (TEST_NUMERICTOOLS       "" OFF)
+option (TEST_NUMERICTOOLS       "" ON)
 option (TEST_BEM      "" ON)
 option (TEST_DEBUG      "" ON)
 
@@ -27,6 +27,7 @@ ${SRC}/numericTools/quadratureRules.cpp
 ${SRC}/numericTools/ellipticIntegral.cpp
 ${SRC}/numericTools/legendrePoly.cpp
 ${SRC}/numericTools/lagrangeBasis.cpp
+${SRC}/numericTools/geometry2D.cpp
 )
 
 #add_library(Spline ${SRC}/spline/quinticSpline.cpp)

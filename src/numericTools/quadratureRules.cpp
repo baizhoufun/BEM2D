@@ -39,6 +39,7 @@ const double *QuadratureRules::weight(int order, QuadratureType type)
     }
 
     default:
+        return qd_GL_w[order];
         break;
     }
 };

@@ -112,9 +112,10 @@ double LegendrePoly::legendreP(int l, double x, LegendrePolyType type)
     }
 
     default:
-        return l;
+        return x;
         break;
     }
+    return x;
 }
 
 } // namespace numericTools

@@ -49,4 +49,25 @@ Eigen::MatrixX2d Geometry2D::line(double x0, double y0, double x1, double y1, in
     return xy;
 };
 
+//return n-knots
+Eigen::MatrixX2d Geometry2D::benchmarkShape(double angle0, double angle1, int n)
+{
+    Eigen::MatrixX2d xy(n, 2);
+    xy.setZero();
+    for (int i = 0; i < n; i++)
+    {
+
+        double t = (static_cast<double>(i)) / (n - 1.);
+        double theta = angle0 + (angle1 - angle0) * t;
+        xy(i, 0) = 2. * sin(theta) * (1 + 0.25 * cos(8. * theta - M_PI));
+        xy(i, 1) = 2. * cos(theta) * (1 + 0.25 * cos(8. * theta - M_PI));
+    }
+    if (abs(angle0) < 1e-12)
+        xy(0, 0) = 0.0;
+    if (abs(angle1 - M_PI) < 1e-12)
+        xy(n - 1, 0) = 0.0;
+
+    return xy;
+} // namespace numericTools
+
 } // namespace numericTools
