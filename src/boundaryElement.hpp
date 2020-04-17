@@ -11,7 +11,7 @@ class BoundaryElement
 public:
     struct Node
     {
-        double x, y, dx, dy;
+        double x, y, dx, dy, ddx, ddy;
     };
 
 private:
@@ -28,21 +28,27 @@ public:
     ~BoundaryElement();
     const int &nElement() const;
     const int &elementOrder() const;
-    const int &indexShift() const;
     const int &quadratureOrder() const;
-    const spline::Quintic &sp() const;
-    const std::vector<Element> &element() const;
-    const std::vector<Node> &node() const;
-
-public:
+    const int &indexShift() const;
     void nElement(int i);
     void elementOrder(int i);
     void indexShift(int i);
     void quadratureOrder(int i);
-    void setSplineBC(int i, spline::BCType bc0, spline::BCType bc1, double a0 = 0, double b0 = 0, double a1 = 0, double b1 = 0);
+
+    const spline::Quintic &sp() const;
+    spline::Quintic &sp();
+    const std::vector<Element> &element() const;
+    const std::vector<Node> &node() const;
+
+public:
+    void initializeElement();
+    void initializeNode();
+    void bindNodeToElement();
+    void initialize();
 
 private:
     size_t nodeToElement(size_t nodeIndex);
+    void setSplineBC(int i, spline::BCType bc0, spline::BCType bc1, double a0 = 0, double b0 = 0, double a1 = 0, double b1 = 0);
 };
 
 } // namespace bem2D

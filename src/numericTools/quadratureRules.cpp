@@ -18,6 +18,7 @@ const double *QuadratureRules::abascissa(int order, QuadratureType type)
     }
 
     default:
+        return qd_GL_x[order];
         break;
     }
 };

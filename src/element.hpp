@@ -13,6 +13,7 @@ private:
     int _quadratureOrder = 2; // element order (linear or quadratic basis) 	//int _nqd = 6;
     std::vector<double> _t, _x, _y, _dx, _dy, _J, _xi;
     std::vector<std::vector<double>> _basis;
+    std::vector<int> _nodeIndex;
 
 public:
     Element();
@@ -31,6 +32,8 @@ public:
     const std::vector<double> &J() const;
     const std::vector<double> &xi() const;
     const std::vector<std::vector<double>> &basis() const;
+    const std::vector<int> &nodeIndex() const;
+    std::vector<int> &setNodeIndex();
 };
 
 } // namespace bem2D

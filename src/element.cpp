@@ -27,6 +27,7 @@ Element::Element(const Element &that)
     _J = that.J();
     _xi = that.xi();
     _basis = that.basis();
+    _nodeIndex = that.nodeIndex();
 };
 
 void Element::initialize(const spline::Quintic &sp, int iSplineSegment, int nElementOrder, int nQuadratureOrder, double const *abacissa)
@@ -42,7 +43,7 @@ void Element::initialize(const spline::Quintic &sp, int iSplineSegment, int nEle
         ab = QuadratureRules::abascissa(nqd, QuadratureType::GAUSS_LEGENDRE);
     else
         ab = abacissa;
-    // allocation
+    // data allocation
     _t.resize(o + 1); // nodes of element; linear t ={ 0, 1}
     _x.resize(nqd);   // various members evaluated at nqd-point quadrature abscissa
     _dx.resize(nqd);
@@ -53,7 +54,8 @@ void Element::initialize(const spline::Quintic &sp, int iSplineSegment, int nEle
     _basis.resize(o + 1); // o + 1 basis fuctions for o-th Lagrange basis
     for (auto &member : _basis)
         member.resize(nqd);
-    // compute
+    _nodeIndex.resize(o + 1);
+    // data compute
     _t[0] = 0.0;
     _t[1] = sp.arc2t(i, 0.5 * arc()); // quadratic  t = {0, where xi(t) = 0.5,  1}
     _t[o] = 1.0;
@@ -85,5 +87,7 @@ const std::vector<double> &Element::dy() const { return _dy; };
 const std::vector<double> &Element::J() const { return _J; };
 const std::vector<double> &Element::xi() const { return _xi; };
 const std::vector<std::vector<double>> &Element::basis() const { return _basis; };
+const std::vector<int> &Element::nodeIndex() const { return _nodeIndex; };
+std::vector<int> &Element::setNodeIndex() { return _nodeIndex; };
 
 } // namespace bem2D
