@@ -8,5 +8,6 @@
 *.sh
 *.py
 build/
+.ipynb_checkpoints/
 resources/.ipynb_checkpoints/
 resources/legacyCode/

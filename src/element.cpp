@@ -81,7 +81,7 @@ const int &Element::quadratureOrder() const { return _quadratureOrder; };
 const double &Element::arc() const { return _arc; };
 const std::vector<double> &Element::t() const { return _t; };
 const std::vector<double> &Element::x() const { return _x; };
-const std::vector<double> &Element::y() const { return _t; };
+const std::vector<double> &Element::y() const { return _y; };
 const std::vector<double> &Element::dx() const { return _dx; };
 const std::vector<double> &Element::dy() const { return _dy; };
 const std::vector<double> &Element::J() const { return _J; };

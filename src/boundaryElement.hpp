@@ -1,6 +1,7 @@
 #ifndef BOUNDARYELEMENT_HPP
 #define BOUNDARYELEMENT_HPP
 #include <vector>
+#include <eigen3/Eigen/Core>
 #include "spline/quinticSpline.hpp"
 #include "element.hpp"
 
@@ -9,12 +10,14 @@ namespace bem2D
 class BoundaryElement
 {
 public:
+    typedef Eigen::Matrix<double, 6, 1> Array6d;
+
+private:
     struct Node
     {
         double x, y, dx, dy, ddx, ddy;
     };
-
-private:
+    //typedef Eigen::Matrix<double, 6, 1> Array6d;
     int _nElement = 0;
     int _elementOrder = 2;
     int _indexShift = 0;
@@ -41,15 +44,27 @@ public:
     const std::vector<Node> &node() const;
 
 public:
-    void initializeElement();
-    void initializeNode();
-    void bindNodeToElement();
     void initialize();
+    const Array6d regular(double rp, double zp, int idElement) const;
+    const Array6d regularDr(double rp, double zp, int idElement) const;
+    const Array6d regularDz(double rp, double zp, int idElement) const;
+    const Array6d axis(double zp, int idElement) const;
+    const Array6d singular(double tau, int idElement) const;
 
 private:
     void nElement(int i); // never manually set element number, it's determined by spline segments
-    size_t nodeToElement(size_t nodeIndex);
-    void setSplineBC(int i, spline::BCType bc0, spline::BCType bc1, double a0 = 0, double b0 = 0, double a1 = 0, double b1 = 0);
+    void initializeElement();
+    void initializeNode();
+    void bindNodeToElement();
+    const Array6d singularFirstOrder(double tau, int idElement) const;
+    const Array6d singularHigherOrder(double tau, int idElement) const;
+    void setSourcePoint(double tau, int idElement, double &rp, double &zp) const;
+
+    static void auxFunction_abm(double rp, double zp, double r, double z, double &a, double &b, double &m);
+    static double auxFunction_xLogX(double x);
+    static double auxFunction_RKE(double P, double Q, double m, double t, double tp);
+    static void auxFunction_fKE(double rp, double zp, double r, double z, double dr, double dz, double J, double a, double b,
+                                double &f_single_K, double &f_double_K, double &f_double_E);
 };
 
 } // namespace bem2D
