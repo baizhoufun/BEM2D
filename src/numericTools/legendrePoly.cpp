@@ -61,7 +61,7 @@ double LegendrePoly::legendreP(int l, double x, LegendrePolyType type)
         EllipticIntegral::ellipticKE(m, K, E);
         switch (l)
         {
-        case 1:
+        case 0: //1
         {
             double c = 2. / M_PI;
             double PE = 2.;
@@ -69,7 +69,7 @@ double LegendrePoly::legendreP(int l, double x, LegendrePolyType type)
             return c * (PE * E + PK * K);
             break;
         }
-        case 3:
+        case 1: //3
         {
             double c = 1. / (3. * M_PI);
             double PE = 16. * x;
@@ -77,7 +77,7 @@ double LegendrePoly::legendreP(int l, double x, LegendrePolyType type)
             return c * (PE * E + PK * K);
             break;
         }
-        case 5:
+        case 2: //5
         {
             double c = 1. / (15. * M_PI);
             double PE = 4. * (-9. + 32. * (x * x));
@@ -85,7 +85,7 @@ double LegendrePoly::legendreP(int l, double x, LegendrePolyType type)
             return c * (PE * E + PK * K);
             break;
         }
-        case 7:
+        case 3: //7
         {
             double c = 1. / (105. * M_PI);
             double PE = 64. * x * (-13. + 24. * (x * x));
@@ -93,7 +93,7 @@ double LegendrePoly::legendreP(int l, double x, LegendrePolyType type)
             return c * (PE * E + PK * K);
             break;
         }
-        case 9:
+        case 4: //9
         {
             double c = 1. / (315. * M_PI);
             double PE = 588. - 6528. * (x * x) + 8192. * (x * x * x * x);

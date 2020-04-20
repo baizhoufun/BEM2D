@@ -11,13 +11,17 @@ class BoundaryElement
 {
 public:
     typedef Eigen::Matrix<double, 6, 1> Array6d;
+    enum class GradType
+    {
+        Dr,
+        Dz
+    };
 
 private:
     struct Node
     {
         double x, y, dx, dy, ddx, ddy;
     };
-    //typedef Eigen::Matrix<double, 6, 1> Array6d;
     int _nElement = 0;
     int _elementOrder = 2;
     int _indexShift = 0;
@@ -46,12 +50,23 @@ public:
 public:
     void initialize();
     const Array6d regular(double rp, double zp, int idElement) const;
-    const Array6d regularDr(double rp, double zp, int idElement) const;
-    const Array6d regularDz(double rp, double zp, int idElement) const;
+    const Array6d regularGrad(double rp, double zp, int idElement, GradType type) const;
+    //const Array6d regularDz(double rp, double zp, int idElement) const;
     const Array6d axis(double zp, int idElement) const;
     const Array6d singular(double tau, int idElement) const;
+    static void assembleMatrix(const BoundaryElement &bem0, const BoundaryElement &bem1, Eigen::MatrixXd &S, Eigen::MatrixXd &D);
+    static double interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p);
 
 private:
+    enum class BoundaryRelationType
+    {
+        Identical,
+        JoinedBefore,
+        JoinedAfter,
+        Disjoint,
+    };
+    static const BoundaryRelationType checkBoundaryRelation(const BoundaryElement &bem0, const BoundaryElement &bem1);
+
     void nElement(int i); // never manually set element number, it's determined by spline segments
     void initializeElement();
     void initializeNode();
@@ -65,6 +80,9 @@ private:
     static double auxFunction_RKE(double P, double Q, double m, double t, double tp);
     static void auxFunction_fKE(double rp, double zp, double r, double z, double dr, double dz, double J, double a, double b,
                                 double &f_single_K, double &f_double_K, double &f_double_E);
+    static void auxFunction_fKE(double rp, double zp, double r, double z, double dr, double dz, double J, GradType type,
+                                double &f_single_K, double &f_double_K, double &f_single_E, double &f_double_E);
+    static bool isOnZAxis(double r);
 };
 
 } // namespace bem2D

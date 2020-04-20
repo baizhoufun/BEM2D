@@ -114,6 +114,42 @@ const BoundaryElement::Array6d BoundaryElement::regular(double rp, double zp, in
     return output;
 }
 
+const BoundaryElement::Array6d BoundaryElement::regularGrad(double rp, double zp, int idElement, BoundaryElement::GradType type) const
+{
+    Array6d output;
+    output.setZero();
+    const auto &e = element()[idElement];
+    const auto &nqd = e.x().size();
+    const auto &o = e.elementOrder();
+    const auto &basis = e.basis();
+    const auto &r = e.x();
+    const auto &dr = e.dx();
+    const auto &z = e.y();
+    const auto &dz = e.dy();
+    const auto &J = e.J();
+    const double *w;
+    w = numericTools::QuadratureRules::weight(nqd, numericTools::QuadratureType::GAUSS_LEGENDRE);
+
+    double a, b, m, K, E, f_single_K, f_single_E, f_double_K, f_double_E;
+
+    for (int k = 0; k < static_cast<int>(nqd); k++)
+    { // cumulative sum of gauss-legendre quadrature
+        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k];
+
+        auxFunction_fKE(rp, zp, rk, zk, drk, dzk, Jk, type, f_single_K, f_single_E, f_double_K, f_double_E);
+        auxFunction_abm(rp, zp, rk, zk, a, b, m);
+        numericTools::EllipticIntegral::ellipticKE(m, K, E);
+
+        for (int j = 0; j <= o; j++)
+        { // iterate through all Lagrange basis functions of order o
+            const double &N = basis[j][k];
+            output[j] += (f_single_K * K + f_single_E * E) * Jk * N * wk;    // equation 7.69
+            output[o + 1 + j] += (f_double_K * K + f_double_E * E) * N * wk; // equation 7.74
+        }
+    }
+    return output;
+}
+
 const BoundaryElement::Array6d BoundaryElement::singularFirstOrder(double tau, int idElement) const
 {
     Array6d output;
@@ -155,7 +191,7 @@ const BoundaryElement::Array6d BoundaryElement::singularFirstOrder(double tau, i
         }
     }
 
-    const double *abSingular = numericTools::QuadratureRules::abascissa(nqdSingular, numericTools::QuadratureType::GAUSS_LEGENDRE_LOG);
+    //const double *abSingular = numericTools::QuadratureRules::abascissa(nqdSingular, numericTools::QuadratureType::GAUSS_LEGENDRE_LOG);
     w = numericTools::QuadratureRules::weight(nqdSingular, numericTools::QuadratureType::GAUSS_LEGENDRE_LOG);
 
     double *abb = new double[nqdSingular];
@@ -177,7 +213,7 @@ const BoundaryElement::Array6d BoundaryElement::singularFirstOrder(double tau, i
 
     for (int k = 0; k < static_cast<int>(nqdSingular); k++)
     {
-        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k], abk = ab[k];
+        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k]; //, abk = ab[k];
         auxFunction_abm(rp, zp, rk, zk, a, b, m);
         numericTools::EllipticIntegral::ellipticKEPQ(m, K, E, PK, QK, PE, QE);
 
@@ -303,7 +339,7 @@ const BoundaryElement::Array6d BoundaryElement::singularHigherOrder(double tau, 
     J = e.J();
     for (int k = 0; k < static_cast<int>(nqdSingular); k++)
     {
-        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k], abk = ab[k];
+        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k]; //, abk = ab[k];
         auxFunction_abm(rp, zp, rk, zk, a, b, m);
         numericTools::EllipticIntegral::ellipticKEPQ(m, K, E, PK, QK, PE, QE);
         auxFunction_fKE(rp, zp, rk, zk, drk, dzk, Jk, a, b, f_single_K, f_double_K, f_double_E);
@@ -338,7 +374,7 @@ const BoundaryElement::Array6d BoundaryElement::singularHigherOrder(double tau, 
     J = e.J();
     for (int k = 0; k < static_cast<int>(nqdSingular); k++)
     {
-        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k], abk = ab[k];
+        const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k]; //, abk = ab[k];
         auxFunction_abm(rp, zp, rk, zk, a, b, m);
         numericTools::EllipticIntegral::ellipticKEPQ(m, K, E, PK, QK, PE, QE);
         auxFunction_fKE(rp, zp, rk, zk, drk, dzk, Jk, a, b, f_single_K, f_double_K, f_double_E);
@@ -366,6 +402,7 @@ const BoundaryElement::Array6d BoundaryElement::singular(double tau, int idEleme
 const BoundaryElement::Array6d BoundaryElement::axis(double zp, int idElement) const
 {
     Array6d output;
+    output.setZero();
     const auto &e = element()[idElement];
     const auto &nqd = e.x().size();
     const auto &o = e.elementOrder();
@@ -395,6 +432,163 @@ const BoundaryElement::Array6d BoundaryElement::axis(double zp, int idElement) c
     }
     return output;
 };
+
+void BoundaryElement::assembleMatrix(const BoundaryElement &bem0,
+                                     const BoundaryElement &bem1, Eigen::MatrixXd &S, Eigen::MatrixXd &D)
+{
+    const int nNode = bem0.node().size();
+    const int shift0 = bem0.indexShift();
+    //  const Eigen::VectorXd &r = bem0.node().r.col(0);
+    //    const Eigen::VectorXd &z = bem0.node().z.col(0);
+    const int shift1 = bem1.indexShift();
+    const int o = bem1.elementOrder();
+    const int nElem = bem1.element().size();
+    const auto check = checkBoundaryRelation(bem0, bem1);
+#pragma omp parallel for
+    for (int i = 0; i < nNode; i++)
+    { // loop through all field points of bem0
+        double ri = bem0.node()[i].x, zi = bem0.node()[i].y;
+        if (isOnZAxis(ri)) // field point at symmetry axis r = 0
+        {
+            for (int j = 0; j < nElem; j++)
+            {
+                const Array6d axisIntegral = bem1.axis(zi, j);
+                for (int k = 0; k <= o; k++)
+                {
+                    S(i + shift0, shift1 + o * j + k) += axisIntegral[k];
+                    D(i + shift0, shift1 + o * j + k) += axisIntegral[o + 1 + k];
+                }
+            }
+        }
+        else
+        {
+            switch (check)
+            {
+            case BoundaryRelationType::Identical:
+            {
+                for (int j = 0; j < i / o - 1 + (i % o); j++)
+                { // regular integral
+                    const Array6d regularIntegral = bem1.regular(ri, zi, j);
+                    for (int k = 0; k <= o; k++)
+                    {
+                        S(i + shift0, o * j + k + shift1) += regularIntegral[k];
+                        D(i + shift0, o * j + k + shift1) += regularIntegral[o + 1 + k];
+                    }
+                }
+                if (i % o == 0)
+                {                      // two elements that contains singularity: m - 1 and m
+                    int j = i / o - 1; // element m - 1
+                    if (j >= 0 && j < nElem)
+                    {
+                        const Array6d singularIntegral = bem1.singular(1, j); // singularit at local tau = 1
+                        for (int k = 0; k <= o; k++)
+                        {
+                            S(i + shift0, o * j + k + shift1) += singularIntegral[k];
+                            D(i + shift0, o * j + k + shift1) += singularIntegral[o + 1 + k];
+                        }
+                    }
+
+                    j = i / o; // element m
+                    if (j >= 0 && j < nElem)
+                    {
+                        const Array6d singularIntegral = bem1.singular(0, j); // singularit at local tau = 0
+                        for (int k = 0; k <= o; k++)
+                        {
+                            S(i + shift0, o * j + k + shift1) += singularIntegral[k];
+                            D(i + shift0, o * j + k + shift1) += singularIntegral[o + 1 + k];
+                        }
+                    }
+                }
+                else
+                {                                                                                // only one spline that contains singularity: m
+                    int j = i / o;                                                               // m
+                    const Array6d singularIntegral = bem1.singular(bem1.element()[j].t()[1], j); // singularit at t where half arclength happens
+                    for (int k = 0; k <= o; k++)
+                    {
+                        S(i + shift0, o * j + k + shift1) += singularIntegral[k];
+                        D(i + shift0, o * j + k + shift1) += singularIntegral[o + 1 + k];
+                    }
+                }
+
+                for (int j = i / o + 1; j < nElem; j++)
+                { // regular integral
+                    const Array6d regularIntegral = bem1.regular(ri, zi, j);
+                    for (int k = 0; k <= o; k++)
+                    {
+                        S(i + shift0, o * j + k + shift1) += regularIntegral[k];
+                        D(i + shift0, o * j + k + shift1) += regularIntegral[o + 1 + k];
+                    }
+                }
+                break;
+            }
+            case BoundaryRelationType::JoinedBefore:
+            {
+                break;
+            }
+            case BoundaryRelationType::JoinedAfter:
+            {
+                break;
+            }
+            case BoundaryRelationType::Disjoint:
+            {
+
+                for (int j = 0; j < nElem; j++)
+                { // only need regular integral
+                    const Array6d regularIntegral = bem1.regular(ri, zi, j);
+                    for (int k = 0; k <= o; k++)
+                    {
+                        S(i + shift0, o * j + k + shift1) += regularIntegral[k];
+                        D(i + shift0, o * j + k + shift1) += regularIntegral[o + 1 + k];
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+            }
+        }
+    }
+};
+
+double BoundaryElement::interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p)
+{
+    const int shift1 = bem.indexShift();
+    const int o = bem.elementOrder();
+    const int nElem = bem.nElement();
+
+    Eigen::VectorXd S, D;
+    S.setZero(q.size());
+    D.setZero(p.size());
+
+    if (isOnZAxis(rp))
+    {
+        for (int j = 0; j < nElem; j++)
+        {
+            const Array6d axisIntegral = bem.axis(zp, j);
+            for (int k = 0; k <= o; k++)
+            {
+                S(shift1 + o * j + k) += axisIntegral[k];
+                D(shift1 + o * j + k) += axisIntegral[o + 1 + k];
+            }
+        }
+    }
+    else
+    {
+        for (int j = 0; j < nElem; j++)
+        {
+            const Array6d regularIntegral = bem.regular(rp, zp, j);
+            for (int k = 0; k <= o; k++)
+            {
+                S(o * j + k + shift1) += regularIntegral[k];
+                D(o * j + k + shift1) += regularIntegral[o + 1 + k];
+            }
+        }
+    }
+
+    return S.dot(q) - D.dot(p);
+};
+
+// ================ rule of five  ==================//
 
 BoundaryElement::BoundaryElement(){};
 
@@ -488,7 +682,7 @@ void BoundaryElement::auxFunction_fKE(double rp, double zp, double r, double z, 
 void BoundaryElement::setSourcePoint(double tau, int idElement, double &rp, double &zp) const
 {
     const auto &e = element()[idElement];
-    const auto &o = e.elementOrder();
+    const auto &o = e.elementOrder(); //std::cout << rp << "\t" << zp << "\n";
     double epsSnap = 1e-13;
     if (std::abs(tau) < epsSnap)
     {
@@ -505,9 +699,8 @@ void BoundaryElement::setSourcePoint(double tau, int idElement, double &rp, doub
         rp = sp().d(sp().x(), idElement, tau)(0);
         zp = sp().d(sp().y(), idElement, tau)(0);
     }
-
-    //std::cout << rp << "\t" << zp << "\n";
 };
+
 double BoundaryElement::auxFunction_xLogX(double x)
 {
     if (std::abs(x) < 1e-14)
@@ -516,6 +709,59 @@ double BoundaryElement::auxFunction_xLogX(double x)
     }
     else
         return x * std::log(x);
+};
+
+void BoundaryElement::auxFunction_fKE(double rp, double zp, double r, double z, double dr, double dz, double J, BoundaryElement::GradType type,
+                                      double &f_single_K, double &f_double_K, double &f_single_E, double &f_double_E)
+{
+    switch (type)
+    {
+    case BoundaryElement::GradType::Dr:
+    {
+        f_single_E = (0.5 * (pow(r, 3) - r * (rp + z - zp) * (rp - z + zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        f_single_K = (-0.5 * r) / (M_PI * rp * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        f_double_E = (0.5 * (dz * (pow(r, 6) - pow(r, 4) * (pow(rp, 2) - 2. * pow(z - zp, 2)) + pow(rp, 2) * pow(pow(rp, 2) + pow(z - zp, 2), 2) + pow(r, 2) * (-pow(rp, 4) - 12. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4))) - dr * r * (pow(r, 4) - 7. * pow(rp, 4) + 2. * pow(r, 2) * (3. * pow(rp, 2) + pow(z - zp, 2)) - 6. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4)) * (z - zp))) / (M_PI * rp * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        f_double_K = (0.5 * (-dz * (pow(r, 4) + pow(r, 2) * (-2. * pow(rp, 2) + pow(z - zp, 2)) + pow(rp, 2) * (pow(rp, 2) + pow(z - zp, 2))) + dr * r * (pow(r, 2) - pow(rp, 2) + pow(z - zp, 2)) * (z - zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        break;
+    };
+    case BoundaryElement::GradType::Dz:
+    {
+        f_single_K = 0;
+        //f_single_K
+        //f_single_K = -0.5 / (M_PI*rp*sqrt(pow(r, 2) + 2.*r*rp + pow(rp, 2) + pow(z - zp, 2)));
+        f_single_E = (r * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        f_double_E = (0.5 * (2. * dr * r * (pow(r, 4) - 2. * pow(r, 2) * (pow(rp, 2) + pow(z - zp, 2)) + (pow(rp, 2) - 3. * pow(z - zp, 2)) * (pow(rp, 2) + pow(z - zp, 2))) - dz * (z - zp) * (-7. * pow(r, 4) + pow(pow(rp, 2) + pow(z - zp, 2), 2) + 6. * pow(r, 2) * (rp + z - zp) * (rp - z + zp)))) / (M_PI * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        f_double_K = (0.5 * (dz * (-pow(r, 2) + pow(rp, 2) + pow(z - zp, 2)) + 2. * dr * r * (z - zp)) * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        break;
+    }
+
+    default:
+        break;
+    };
+};
+
+const BoundaryElement::BoundaryRelationType BoundaryElement::checkBoundaryRelation(const BoundaryElement &bem0, const BoundaryElement &bem1)
+{
+    int s0 = bem0.indexShift();
+    int s1 = bem1.indexShift();
+    int ds = s1 - s0;
+
+    if (ds == 0) // same Bem object
+        return BoundaryRelationType::Identical;
+    if (ds > 0 && std::abs(ds) == bem0.node().size()) // bem1 is adjacent to and "after" bem0
+        return BoundaryRelationType::JoinedAfter;
+    if (ds < 0 && std::abs(ds) == bem1.node().size()) // bem1 is adjacent to and "before" bem0
+        return BoundaryRelationType::JoinedBefore;
+
+    return BoundaryRelationType::Disjoint; // two Bem objects are not adjacent
+};
+
+bool BoundaryElement::isOnZAxis(double r)
+{
+    if (std::abs(r) < 1e-13)
+        return true;
+    else
+        return false;
 };
 
 } // namespace bem2D

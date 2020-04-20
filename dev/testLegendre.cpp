@@ -25,11 +25,11 @@ int main()
         legendrePoly(i, 6 + 1) = LegendrePoly::legendreP(3, x, LegendrePolyType::INTEGER);
         legendrePoly(i, 8 + 1) = LegendrePoly::legendreP(4, x, LegendrePolyType::INTEGER);
         legendrePoly(i, 10 + 1) = LegendrePoly::legendreP(5, x, LegendrePolyType::INTEGER);
-        legendrePoly(i, 1 + 1) = LegendrePoly::legendreP(1, x, LegendrePolyType::HALF_INTEGER);
-        legendrePoly(i, 3 + 1) = LegendrePoly::legendreP(3, x, LegendrePolyType::HALF_INTEGER);
-        legendrePoly(i, 5 + 1) = LegendrePoly::legendreP(5, x, LegendrePolyType::HALF_INTEGER);
-        legendrePoly(i, 7 + 1) = LegendrePoly::legendreP(7, x, LegendrePolyType::HALF_INTEGER);
-        legendrePoly(i, 9 + 1) = LegendrePoly::legendreP(9, x, LegendrePolyType::HALF_INTEGER);
+        legendrePoly(i, 1 + 1) = LegendrePoly::legendreP(0, x, LegendrePolyType::HALF_INTEGER);
+        legendrePoly(i, 3 + 1) = LegendrePoly::legendreP(1, x, LegendrePolyType::HALF_INTEGER);
+        legendrePoly(i, 5 + 1) = LegendrePoly::legendreP(2, x, LegendrePolyType::HALF_INTEGER);
+        legendrePoly(i, 7 + 1) = LegendrePoly::legendreP(3, x, LegendrePolyType::HALF_INTEGER);
+        legendrePoly(i, 9 + 1) = LegendrePoly::legendreP(4, x, LegendrePolyType::HALF_INTEGER);
     }
     file.open("../resources/testNumericTools/legendrePoly.txt");
     file << legendrePoly.format(fmt);

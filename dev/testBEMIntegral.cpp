@@ -11,12 +11,9 @@ int main()
 {
 
     int N = 32;
-
     Eigen::MatrixXd knots = numericTools::Geometry2D::benchmarkShape(0, M_PI, N + 1);
-
     bem2D::BoundaryElement bem;
 
-    //spline::Quintic sp;
     bem.sp().init(knots);
     bem.sp().setNode();
     bem.sp().setBC(0, spline::BCType::Odd, spline::BCType::Odd);
@@ -29,7 +26,7 @@ int main()
         bem.sp().update();
     }
 
-    bem.sp().write("../resources/testBEM/spline.txt");
+    bem.sp().write("../resources/testBEMIntegral/spline.txt");
     bem.quadratureOrder(16);
     bem.elementOrder(2);
     bem.indexShift(0);
