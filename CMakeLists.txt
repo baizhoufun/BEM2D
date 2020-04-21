@@ -1,8 +1,9 @@
 cmake_minimum_required (VERSION 3.9)
 
-option (TEST_NUMERICTOOLS       "" ON)
-option (TEST_BEM      "" ON)
+option (TEST_NUMERICTOOLS       "" OFF)
+option (TEST_BEM      "" OFF)
 option (TEST_DEBUG      "" OFF)
+option (TEST_CURRENT       "" ON)
 
 if (TEST_DEBUG)
 set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUG")
@@ -87,4 +88,26 @@ ${EIGEN3_LIBS}
 OpenMP::OpenMP_CXX
 )
 
+add_executable(testBEMMixed ${ROOT}/dev/testBEMMixed.cpp)
+target_link_libraries(testBEMMixed 
+PUBLIC 
+BEM
+NumericTools
+${EIGEN3_LIBS}
+OpenMP::OpenMP_CXX
+)
+
+
 endif (TEST_BEM)
+
+
+
+
+add_executable(testBEMCone ${ROOT}/dev/testBEMCone.cpp)
+target_link_libraries(testBEMCone 
+PUBLIC 
+BEM
+NumericTools
+${EIGEN3_LIBS}
+OpenMP::OpenMP_CXX
+)

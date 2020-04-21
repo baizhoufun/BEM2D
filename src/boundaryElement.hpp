@@ -56,6 +56,7 @@ public:
     const Array6d singular(double tau, int idElement) const;
     static void assembleMatrix(const BoundaryElement &bem0, const BoundaryElement &bem1, Eigen::MatrixXd &S, Eigen::MatrixXd &D);
     static double interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p);
+    static void swapSDLR(const Eigen::MatrixXd &S, const Eigen::MatrixXd &D, int nSwap, Eigen::MatrixXd &L, Eigen::MatrixXd &R);
 
 private:
     enum class BoundaryRelationType
@@ -71,8 +72,6 @@ private:
     void initializeElement();
     void initializeNode();
     void bindNodeToElement();
-    const Array6d singularFirstOrder(double tau, int idElement) const;
-    const Array6d singularHigherOrder(double tau, int idElement) const;
     void setSourcePoint(double tau, int idElement, double &rp, double &zp) const;
 
     static void auxFunction_abm(double rp, double zp, double r, double z, double &a, double &b, double &m);
@@ -82,7 +81,6 @@ private:
                                 double &f_single_K, double &f_double_K, double &f_double_E);
     static void auxFunction_fKE(double rp, double zp, double r, double z, double dr, double dz, double J, GradType type,
                                 double &f_single_K, double &f_double_K, double &f_single_E, double &f_double_E);
-    static bool isOnZAxis(double r);
 };
 
 } // namespace bem2D

@@ -25,7 +25,7 @@ auto dPhiDn = [](double nr, double nz, double r, double z) {
 
 int main()
 {
-    int N = 128;
+    int N = 256;
     Eigen::MatrixXd knots = numericTools::Geometry2D::benchmarkShape(0, M_PI, N + 1);
     bem2D::BoundaryElement bem;
 
@@ -76,7 +76,7 @@ int main()
         lhs(k) = phi(r, z);
         //    errorCurvature(k) = Bem::Geometry::curvBenchmark(acos(z / sqrt(r * r + z * z))) - Bem::Geometry::totalCurv(r, z, dr, dz, ddr, ddz);
     }
-    std::cout << "solving ..." << Eigen::nbThreads() << "\n";
+
     Eigen::VectorXd answer = S.partialPivLu().solve(D * lhs);
     std::cout << (answer - rhs).cwiseAbs().maxCoeff() << "\n";
     std::cout << "=====================\n";
@@ -89,8 +89,6 @@ int main()
             std::cout << bem2D::BoundaryElement::interiorField(rp, zp, bem, answer, lhs) - phi(rp, zp) << "\n";
         }
     }
-
-    //std::cout <<  << "\n";
 
     std::cin.get();
     return 0;
