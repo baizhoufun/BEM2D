@@ -4,6 +4,7 @@
 #include "numericTools/quadratureRules.hpp"
 #include "numericTools/ellipticIntegral.hpp"
 #include "numericTools/geometry2D.hpp"
+#include "io/ioEigen.hpp"
 
 namespace bem2D
 {
@@ -151,8 +152,9 @@ const BoundaryElement::Array6d BoundaryElement::regularGrad(double rp, double zp
     for (int k = 0; k < static_cast<int>(nqd); k++)
     { // cumulative sum of gauss-legendre quadrature
         const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k];
+        //double &f_single_K, double &f_double_K, double &f_single_E, double &f_double_E
 
-        auxFunction_fKE(rp, zp, rk, zk, drk, dzk, Jk, type, f_single_K, f_single_E, f_double_K, f_double_E);
+        auxFunction_fKE(rp, zp, rk, zk, drk, dzk, Jk, type, f_single_K, f_double_K, f_single_E, f_double_E);
         auxFunction_abm(rp, zp, rk, zk, a, b, m);
         numericTools::EllipticIntegral::ellipticKE(m, K, E);
 
@@ -172,8 +174,8 @@ const BoundaryElement::Array6d BoundaryElement::singular(double tau, int idEleme
     output.setZero();
     double rp, zp;
     setSourcePoint(tau, idElement, rp, zp);
-    const int nqdRegular = 20;  // settings.qdOrder() * 2;
-    const int nqdSingular = 20; //settings.qdOrder() * 2;
+    const int nqdRegular = 16;  // settings.qdOrder() * 2;
+    const int nqdSingular = 16; //settings.qdOrder() * 2;
     double a, b, m, K, E, PK, QK, PE, QE, RK, RE, f_single_K, f_double_K, f_double_E;
     Element e;
     const double *ab;
@@ -202,7 +204,6 @@ const BoundaryElement::Array6d BoundaryElement::singular(double tau, int idEleme
 
     for (int k = 0; k < static_cast<int>(nqdRegular); k++)
     {
-
         const double rk = r[k], zk = z[k], drk = dr[k], dzk = dz[k], Jk = J[k], wk = w[k], abk = ab[k];
         auxFunction_abm(rp, zp, rk, zk, a, b, m);
         numericTools::EllipticIntegral::ellipticKEPQ(m, K, E, PK, QK, PE, QE);
@@ -529,15 +530,19 @@ void BoundaryElement::assembleMatrix(const BoundaryElement &bem0,
     }
 };
 
-double BoundaryElement::interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p)
+Eigen::Vector3d BoundaryElement::interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p)
 {
     const int shift1 = bem.indexShift();
     const int o = bem.elementOrder();
     const int nElem = bem.nElement();
 
-    Eigen::VectorXd S, D;
+    Eigen::VectorXd S, D, Sr, Dr, Sz, Dz;
     S.setZero(q.size());
     D.setZero(p.size());
+    Sr.setZero(q.size());
+    Dr.setZero(p.size());
+    Sz.setZero(q.size());
+    Dz.setZero(p.size());
 
     if (numericTools::Geometry2D::isOnZAxis(rp))
     {
@@ -564,7 +569,25 @@ double BoundaryElement::interiorField(double rp, double zp, const BoundaryElemen
         }
     }
 
-    return S.dot(q) - D.dot(p);
+    for (int j = 0; j < nElem; j++)
+    {
+        const Array6d regularIntegralDr = bem.regularGrad(rp, zp, j, GradType::Dr);
+        const Array6d regularIntegralDz = bem.regularGrad(rp, zp, j, GradType::Dz);
+        for (int k = 0; k <= o; k++)
+        {
+            Sr(o * j + k + shift1) += regularIntegralDr[k];
+            Dr(o * j + k + shift1) += regularIntegralDr[o + 1 + k];
+            Sz(o * j + k + shift1) += regularIntegralDz[k];
+            Dz(o * j + k + shift1) += regularIntegralDz[o + 1 + k];
+        }
+    }
+
+    Eigen::Vector3d tmp;
+    tmp.setZero();
+    tmp(0) = S.dot(q) - D.dot(p);
+    tmp(1) = Sr.dot(q) - Dr.dot(p);
+    tmp(2) = Sz.dot(q) - Dz.dot(p);
+    return tmp;
 };
 
 // ================ rule of five  ==================//
@@ -697,23 +720,30 @@ void BoundaryElement::auxFunction_fKE(double rp, double zp, double r, double z, 
     {
     case BoundaryElement::GradType::Dr:
     {
-        f_single_E = (0.5 * (pow(r, 3) - r * (rp + z - zp) * (rp - z + zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
-        f_single_K = (-0.5 * r) / (M_PI * rp * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
-        f_double_E = (0.5 * (dz * (pow(r, 6) - pow(r, 4) * (pow(rp, 2) - 2. * pow(z - zp, 2)) + pow(rp, 2) * pow(pow(rp, 2) + pow(z - zp, 2), 2) + pow(r, 2) * (-pow(rp, 4) - 12. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4))) - dr * r * (pow(r, 4) - 7. * pow(rp, 4) + 2. * pow(r, 2) * (3. * pow(rp, 2) + pow(z - zp, 2)) - 6. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4)) * (z - zp))) / (M_PI * rp * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
-        f_double_K = (0.5 * (-dz * (pow(r, 4) + pow(r, 2) * (-2. * pow(rp, 2) + pow(z - zp, 2)) + pow(rp, 2) * (pow(rp, 2) + pow(z - zp, 2))) + dr * r * (pow(r, 2) - pow(rp, 2) + pow(z - zp, 2)) * (z - zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
-        break;
-    };
-    case BoundaryElement::GradType::Dz:
-    {
-        f_single_K = 0;
-        //f_single_K
-        //f_single_K = -0.5 / (M_PI*rp*sqrt(pow(r, 2) + 2.*r*rp + pow(rp, 2) + pow(z - zp, 2)));
-        f_single_E = (r * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
-        f_double_E = (0.5 * (2. * dr * r * (pow(r, 4) - 2. * pow(r, 2) * (pow(rp, 2) + pow(z - zp, 2)) + (pow(rp, 2) - 3. * pow(z - zp, 2)) * (pow(rp, 2) + pow(z - zp, 2))) - dz * (z - zp) * (-7. * pow(r, 4) + pow(pow(rp, 2) + pow(z - zp, 2), 2) + 6. * pow(r, 2) * (rp + z - zp) * (rp - z + zp)))) / (M_PI * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
-        f_double_K = (0.5 * (dz * (-pow(r, 2) + pow(rp, 2) + pow(z - zp, 2)) + 2. * dr * r * (z - zp)) * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        //f_single_E = (0.5 * (pow(r, 3) - r * (rp + z - zp) * (rp - z + zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        //f_single_K = (-0.5 * r) / (M_PI * rp * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        //f_double_E = (0.5 * (dz * (pow(r, 6) - pow(r, 4) * (pow(rp, 2) - 2. * pow(z - zp, 2)) + pow(rp, 2) * pow(pow(rp, 2) + pow(z - zp, 2), 2) + pow(r, 2) * (-pow(rp, 4) - 12. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4))) - dr * r * (pow(r, 4) - 7. * pow(rp, 4) + 2. * pow(r, 2) * (3. * pow(rp, 2) + pow(z - zp, 2)) - 6. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4)) * (z - zp))) / (M_PI * rp * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        //f_double_K = (0.5 * (-dz * (pow(r, 4) + pow(r, 2) * (-2. * pow(rp, 2) + pow(z - zp, 2)) + pow(rp, 2) * (pow(rp, 2) + pow(z - zp, 2))) + dr * r * (pow(r, 2) - pow(rp, 2) + pow(z - zp, 2)) * (z - zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        f_single_K = -r / (2. * M_PI * rp * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        f_single_E = (pow(r, 3) - r * (rp + z - zp) * (rp - z + zp)) / (2. * M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        f_double_K = (-(dz * (pow(r, 4) + pow(r, 2) * (-2 * pow(rp, 2) + pow(z - zp, 2)) + pow(rp, 2) * (pow(rp, 2) + pow(z - zp, 2)))) + dr * r * (pow(r, 2) - pow(rp, 2) + pow(z - zp, 2)) * (z - zp)) / (2. * M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        f_double_E = (dz * (pow(r, 6) - pow(r, 4) * (pow(rp, 2) - 2 * pow(z - zp, 2)) + pow(rp, 2) * pow(pow(rp, 2) + pow(z - zp, 2), 2) + pow(r, 2) * (-pow(rp, 4) - 12 * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4))) - dr * r * (pow(r, 4) - 7 * pow(rp, 4) + 2 * pow(r, 2) * (3 * pow(rp, 2) + pow(z - zp, 2)) - 6 * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4)) * (z - zp)) / (2. * M_PI * rp * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
         break;
     }
-
+    case BoundaryElement::GradType::Dz:
+    {
+        //f_single_K = 0;
+        //f_single_K
+        //f_single_K = -0.5 / (M_PI*rp*sqrt(pow(r, 2) + 2.*r*rp + pow(rp, 2) + pow(z - zp, 2)));
+        //f_single_E = (r * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        //f_double_E = (0.5 * (2. * dr * r * (pow(r, 4) - 2. * pow(r, 2) * (pow(rp, 2) + pow(z - zp, 2)) + (pow(rp, 2) - 3. * pow(z - zp, 2)) * (pow(rp, 2) + pow(z - zp, 2))) - dz * (z - zp) * (-7. * pow(r, 4) + pow(pow(rp, 2) + pow(z - zp, 2), 2) + 6. * pow(r, 2) * (rp + z - zp) * (rp - z + zp)))) / (M_PI * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        //f_double_K = (0.5 * (dz * (-pow(r, 2) + pow(rp, 2) + pow(z - zp, 2)) + 2. * dr * r * (z - zp)) * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        f_single_K = 0;
+        f_single_E = (r * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
+        f_double_K = ((dz * (-pow(r, 2) + pow(rp, 2) + pow(z - zp, 2)) + 2 * dr * r * (z - zp)) * (z - zp)) / (2. * M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        f_double_E = (2 * dr * r * (pow(r, 4) - 2 * pow(r, 2) * (pow(rp, 2) + pow(z - zp, 2)) + (pow(rp, 2) - 3 * pow(z - zp, 2)) * (pow(rp, 2) + pow(z - zp, 2))) - dz * (z - zp) * (-7 * pow(r, 4) + pow(pow(rp, 2) + pow(z - zp, 2), 2) + 6 * pow(r, 2) * (rp + z - zp) * (rp - z + zp))) / (2. * M_PI * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
+        break;
+    }
     default:
         break;
     };
@@ -733,6 +763,65 @@ const BoundaryElement::BoundaryRelationType BoundaryElement::checkBoundaryRelati
         return BoundaryRelationType::JoinedBefore;
 
     return BoundaryRelationType::Disjoint; // two Bem objects are not adjacent
+};
+
+void BoundaryElement::scan(const BoundaryElement &bem0, const BoundaryElement &bem1,
+                           const Eigen::VectorXd &q, const Eigen::VectorXd &p, const std::string &inputFile, const std::string &outputFile)
+{
+    Eigen::MatrixXd inputMat = io::IOEigen::readMatrix(inputFile.c_str(), 1e6);
+    Eigen::MatrixXd outputMat;
+    outputMat.setZero(inputMat.rows() + p.size(), 5);
+    // evaluate phi, dphidr, dphidz at these points
+#pragma omp parallel for
+    for (Eigen::Index row = 0; row < inputMat.rows(); row++)
+    {
+        double rp = inputMat(row, 0);
+        double zp = inputMat(row, 1);
+        Eigen::Vector3d field;
+        field.setZero();
+        field = BoundaryElement::interiorField(rp, zp, bem0, q, p);
+        field += BoundaryElement::interiorField(rp, zp, bem1, q, p);
+        //fieldDr = BoundaryElement::assemblyDr(rp, zp, bem0, q, p);
+        //fieldDr += BoundaryElement::assemblyDr(rp, zp, bem1, q, p);
+        //fieldDz = BoundaryElement::assemblyDz(rp, zp, bem0, q, p);
+        //fieldDz += BoundaryElement::assemblyDz(rp, zp, bem1, q, p);
+        outputMat(row, 0) = rp;
+        outputMat(row, 1) = zp;
+        outputMat(row, 2) = field(0);
+        outputMat(row, 3) = field(1);
+        outputMat(row, 4) = field(2);
+    }
+
+    // export field along domain boundary
+    int n0 = bem0.node().size(), n1 = bem1.node().size();
+    int nTotal = n0 + n1;
+
+    for (int k = 0; k < nTotal; k++)
+    {
+        double rp, zp, field;
+        if (k < n0)
+        { // boundary 0
+            rp = bem0.node()[k].x;
+            zp = bem0.node()[k].y;
+        }
+        else
+        {                               // boundary 1
+            rp = bem1.node()[k - n0].x; //.r(k - n0, 0);
+            zp = bem1.node()[k - n0].y; //.z(k - n0, 0);
+        }
+        field = p(k);
+        int row = inputMat.rows() + k;
+        outputMat(row, 0) = rp;
+        outputMat(row, 1) = zp;
+        outputMat(row, 2) = field;
+    }
+
+    io::IOEigen::write(outputFile, outputMat);
+
+    // std::ofstream file(outputFile);
+    // Eigen::IOFormat fmt(Eigen::FullPrecision, 0, "\t", "\n", "", "", "", "");
+    // file << outputMat.format(fmt);
+    // file.close();
 };
 
 } // namespace bem2D

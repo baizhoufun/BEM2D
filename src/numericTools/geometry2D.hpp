@@ -36,6 +36,9 @@ public:
 
     static void estimateDerivativeCircleBegin(const Eigen::MatrixX2d &xy, double &dx, double &ddx, double &dy, double &ddy);
     static void estimateDerivativeConeEnd(const Eigen::MatrixX2d &xy, const double (&c)[5], double &dx, double &ddx, double &dy, double &ddy);
+    static double curvatureAxisymmetric(double r, double z, double dr, double dz, double ddr, double ddz);
+
+    static double curvatureC3Cone(double r, double rc, const double (&c)[5]);
 };
 
 } // namespace numericTools

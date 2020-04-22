@@ -20,3 +20,10 @@ $$
 
 where boundary $\gamma=\gamma_\mathrm{D}\cup\gamma_\mathrm{N}$ 
 is split into a Dirichlet part $\gamma_\mathrm{D}$ and a Neumann part $\gamma_\mathrm{N}$ .
+
+## Todo list
+
+1. Benchmark data for mixed BVP of  patched cone
+2. Generate interior field points using Mathematica
+3. Generate data at these field points.
+

@@ -55,8 +55,10 @@ public:
     const Array6d axis(double zp, int idElement) const;
     const Array6d singular(double tau, int idElement) const;
     static void assembleMatrix(const BoundaryElement &bem0, const BoundaryElement &bem1, Eigen::MatrixXd &S, Eigen::MatrixXd &D);
-    static double interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p);
+    static Eigen::Vector3d interiorField(double rp, double zp, const BoundaryElement &bem, const Eigen::VectorXd &q, const Eigen::VectorXd &p);
     static void swapSDLR(const Eigen::MatrixXd &S, const Eigen::MatrixXd &D, int nSwap, Eigen::MatrixXd &L, Eigen::MatrixXd &R);
+    static void scan(const BoundaryElement &bem0, const BoundaryElement &bem1,
+                     const Eigen::VectorXd &q, const Eigen::VectorXd &p, const std::string &inputFile, const std::string &outputFile);
 
 private:
     enum class BoundaryRelationType
@@ -66,6 +68,7 @@ private:
         JoinedAfter,
         Disjoint,
     };
+
     static const BoundaryRelationType checkBoundaryRelation(const BoundaryElement &bem0, const BoundaryElement &bem1);
 
     void nElement(int i); // never manually set element number, it's determined by spline segments

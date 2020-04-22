@@ -42,6 +42,11 @@ ${SRC}/numericTools/lagrangeBasis.cpp
 ${SRC}/numericTools/geometry2D.cpp
 )
 
+add_library(IO
+${SRC}/io/ioEigen.cpp
+${SRC}/io/utilities.cpp
+)
+
 add_library(BEM ${SRC}/boundaryElement.cpp ${SRC}/element.cpp ${SRC}/spline/quinticSpline.cpp)
 
 
@@ -108,6 +113,7 @@ target_link_libraries(testBEMCone
 PUBLIC 
 BEM
 NumericTools
+IO
 ${EIGEN3_LIBS}
 OpenMP::OpenMP_CXX
 )

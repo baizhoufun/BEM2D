@@ -124,6 +124,11 @@ void Geometry2D::zonalHarmonics(double r, double z, int L, LegendrePolyType lTyp
     else
     {
         phi = pow(R, -l - 1.0) * Pl;
+        if (isOnZAxis(r))
+            dPhiDr = 0;
+        else
+            dPhiDr = -pow(R, -3.0 - l) * (1 + l) * (R * R * Pl - R * z * Pl1) / r;
+        dPhiDz = -pow(R, -2.0 - l) * (1 + l) * Pl1;
     }
 };
 
@@ -166,6 +171,22 @@ double Geometry2D::c3Cone(double r, double rc, const double (&c)[5])
     else
     {
         return c[0] * r + c[1] / sqrt(r) + c[3] / pow(r, 3.5) + c[4] / pow(r, 5.0);
+    }
+}
+
+double Geometry2D::curvatureC3Cone(double r, double rc, const double (&c)[5])
+{
+    double f0 = (231 * c[4]) / (16. * pow(rc, 5)) + (1045 * c[3]) / (128. * pow(rc, 3.5)) + (195 * c[1]) / (128. * sqrt(rc)) + (5 * c[0] * rc) / 16.;
+    double f2 = (-495 * c[4]) / (16. * pow(rc, 7)) - (1995 * c[3]) / (128. * pow(rc, 5.5)) - (117 * c[1]) / (128. * pow(rc, 2.5)) + (15 * c[0]) / (16. * rc);
+    double f4 = (385 * c[4]) / (16. * pow(rc, 9)) + (1463 * c[3]) / (128. * pow(rc, 7.5)) + (65 * c[1]) / (128. * pow(rc, 4.5)) - (5 * c[0]) / (16. * pow(rc, 3));
+    double f6 = (-105 * c[4]) / (16. * pow(rc, 11)) - (385 * c[3]) / (128. * pow(rc, 9.5)) - (15 * c[1]) / (128. * pow(rc, 6.5)) + c[0] / (16. * pow(rc, 5));
+    if (r < rc)
+    {
+        return (2 * (f2 + 6 * f4 * pow(r, 2) + 15 * f6 * pow(r, 4) + (f2 + 2 * f4 * pow(r, 2) + 3 * f6 * pow(r, 4)) * (1 + pow(2 * f2 * r + 4 * f4 * pow(r, 3) + 6 * f6 * pow(r, 5), 2)))) / pow(1 + pow(2 * f2 * r + 4 * f4 * pow(r, 3) + 6 * f6 * pow(r, 5), 2), 1.5);
+    }
+    else
+    {
+        return ((3 * c[1]) / (4. * pow(r, 2.5)) + (15.75 * c[3]) / pow(r, 5.5) + (30 * c[4]) / pow(r, 7) + ((c[0] - c[1] / (2. * pow(r, 1.5)) - (3.5 * c[3]) / pow(r, 4.5) - (5 * c[4]) / pow(r, 6)) * (1 + pow(c[0] - c[1] / (2. * pow(r, 1.5)) - (3.5 * c[3]) / pow(r, 4.5) - (5 * c[4]) / pow(r, 6), 2))) / r) / pow(1 + pow(c[0] - c[1] / (2. * pow(r, 1.5)) - (3.5 * c[3]) / pow(r, 4.5) - (5 * c[4]) / pow(r, 6), 2), 1.5);
     }
 }
 
@@ -260,5 +281,13 @@ void Geometry2D::estimateDerivativeCircleBegin(const Eigen::MatrixX2d &xy, doubl
     //ddy = (ddx * dy + curvature * pow(dx * dx + dy * dy, 1.5)) / dx - dy * (dx * dx + dy * dy) / dx / x0; // eqn 7.92
     ddy = (ddx * dy + curvature * pow(dx * dx + dy * dy, 1.5)) / dx; // eqn 7.92
 };
+
+double Geometry2D::curvatureAxisymmetric(double r, double z, double dr, double dz, double ddr, double ddz)
+{
+    if (isOnZAxis(r))
+        return ddz / dr / dr * 2.;
+    else
+        return (dr * ddz - dz * ddr) / pow(dr * dr + dz * dz, 1.5) + dz / r / sqrt(dr * dr + dz * dz);
+}
 
 } // namespace numericTools
