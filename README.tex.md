@@ -5,7 +5,7 @@
 Solve 2D Axisymmetric Laplace equation
 
 $$
-\nabla^2\phi = 0\quad\textrm{in}\quad \omega~,
+\nabla^2\phi(r,z) = 0\quad\textrm{in}\quad \omega~,
 $$
 
 subject to boundary conditions imposed on domain boundary $\gamma$ ,
@@ -21,9 +21,11 @@ $$
 where boundary $\gamma=\gamma_\mathrm{D}\cup\gamma_\mathrm{N}$ 
 is split into a Dirichlet part $\gamma_\mathrm{D}$ and a Neumann part $\gamma_\mathrm{N}$ .
 
-## Todo list
+## Compile with CMAKE
 
-1. Benchmark data for mixed BVP of  patched cone
-2. Generate interior field points using Mathematica
-3. Generate data at these field points.
-
+```bash
+mkdir build/
+cd build
+cmake ..
+make -j4
+```

@@ -187,7 +187,7 @@ void test(int N, int order, const std::string tag)
 
 int main()
 {
-    int globalMin = 12, globalMax = 34; //17;
+    int globalMin = 12, globalMax = 34 + 0 * 4; //17;
 
     for (int global = globalMin; global < globalMax; global++)
     {
