@@ -12,3 +12,10 @@ subject to boundary conditions imposed on domain boundary <img src="/tex/11c596d
 
 where boundary <img src="/tex/6a134afa087f6f4f0518d21f6324e905.svg?invert_in_darkmode&sanitize=true" align=middle width=87.04995749999999pt height=18.264896099999987pt/> 
 is split into a Dirichlet part <img src="/tex/c6756650b41a2a1f7f4ab6b70d2f124d.svg?invert_in_darkmode&sanitize=true" align=middle width=18.407965949999994pt height=14.15524440000002pt/> and a Neumann part <img src="/tex/3ec459e527f7d6875940e3190e2c199d.svg?invert_in_darkmode&sanitize=true" align=middle width=18.21390614999999pt height=14.15524440000002pt/> .
+
+## Todo list
+
+1. Benchmark data for mixed BVP of  patched cone
+2. Generate interior field points using Mathematica
+3. Generate data at these field points.
+
