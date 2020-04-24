@@ -1,5 +1,6 @@
 #include "dynamicCone.hpp"
 #include "numericTools/geometry2D.hpp"
+#include "numericTools/quadratureRules.hpp"
 
 void DynamicCone::computeABC(const double c1, const double b0, double *a, double *b, double *c)
 {
@@ -131,4 +132,34 @@ Eigen::VectorXd DynamicCone::setLiquidBC(const bem2D::BoundaryElement &interface
         }
     }
     return liquidBC;
+};
+
+double DynamicCone::farFieldShape(double r, const double (&c)[5])
+{
+    return c[0] * r + c[1] / sqrt(r) + c[3] / pow(r, 3.5) + c[4] / pow(r, 5.0);
+};
+
+double DynamicCone::farFieldShapeDr(double r, const double (&c)[5])
+{
+    return c[0] - (5.0 * c[4]) / pow(r, 6.0) - (7 * c[3]) / (2. * pow(r, 4.5)) - c[1] / (2. * pow(r, 1.5));
+};
+
+double DynamicCone::farFieldShapeArc(double r0, double r1, const double (&c)[5])
+{
+    const int nqd = 16;
+    const double *ab;
+    const double *w;
+    ab = numericTools::QuadratureRules::abascissa(nqd, numericTools::QuadratureType::GAUSS_LEGENDRE);
+    w = numericTools::QuadratureRules::weight(nqd, numericTools::QuadratureType::GAUSS_LEGENDRE);
+
+    double arc = 0;
+
+    for (int k = 0; k < nqd; k++)
+    {
+        double r = r0 + (r1 - r0) * ab[k];
+        double dShapeDr = farFieldShapeDr(r, c);
+        arc += w[k] * (r1 - r0) * sqrt(1 + dShapeDr * dShapeDr);
+    }
+
+    return arc;
 };

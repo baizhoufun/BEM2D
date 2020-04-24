@@ -25,6 +25,10 @@ private:
     static void computeABC(const double c1, const double b0, double *a, double *b, double *c);
     static double farFieldVelocityPotential(double r, double z, const double (&a)[5]);
     static double farFieldElectricFlux(double nr, double nz, double r, double z, const double (&b)[5]);
+    static double farFieldShape(double r, const double (&c)[5]);
+    static double farFieldShapeDr(double r, const double (&c)[5]);
+    static double farFieldShapeArc(double r0, double r1, const double (&c)[5]);
+    static void farFieldShapePadding(double rEnd, double rIncrement); // STILL WORKING ON
 };
 
 #endif
