@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
-#include "boundaryElement.hpp"
+#include "bem2D/boundaryElement.hpp"
 #include "numericTools/geometry2D.hpp"
 
 Eigen::IOFormat fmt(Eigen::FullPrecision, 0, "\t", "\n", "", "", "", "");
@@ -37,7 +37,7 @@ int main()
         // number of knots of first spline = (2^global + 1)
         //int n = ;
         int N = (int)pow(sqrt(2.0), global) + 1;
-        double c[5] = {-0.86, -1, 0, 0, 0};
+        //double c[5] = {-0.86, -1, 0, 0, 0};
 
         Eigen::MatrixXd knot[2];
         //knot[0] = numericTools::Geometry2D::c3Cone(5, 70, c, N);

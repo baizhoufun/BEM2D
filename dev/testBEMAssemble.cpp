@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
-#include "boundaryElement.hpp"
+#include "bem2D/boundaryElement.hpp"
 #include "numericTools/geometry2D.hpp"
 
 Eigen::IOFormat fmt(Eigen::FullPrecision, 0, "\t", "\n", "", "", "", "");
@@ -86,7 +86,7 @@ int main()
         for (int iy = 1; iy < 10; iy++)
         {
             double rp = drp * ix, zp = dzp * iy;
-            std::cout << bem2D::BoundaryElement::interiorField(rp, zp, bem, answer, lhs) - phi(rp, zp) << "\n";
+            std::cout << bem2D::BoundaryElement::interiorField(rp, zp, bem, answer, lhs)(0) - phi(rp, zp) << "\n";
         }
     }
 

@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.9)
 
-option (TEST_NUMERICTOOLS       "" OFF)
-option (TEST_BEM      "" OFF)
+option (TEST_NUMERICTOOLS       "" ON)
+option (TEST_BEM      "" ON)
 option (TEST_DEBUG      "" OFF)
 option (TEST_CURRENT       "" ON)
 
@@ -27,9 +27,11 @@ add_compile_options(-std=c++11 -O3 -Wall -fopenmp)
 
 set(ROOT ${PROJECT_SOURCE_DIR})
 set(SRC "${ROOT}/src")
+set(SRCBEM "${ROOT}/src/bem2D")
 include_directories("${SRC}")
-include_directories("${SRC}/numericTools")
-include_directories("${SRC}/spline")
+#include_directories("${SRC}")
+#include_directories("${SRC}/numericTools")
+#include_directories("${SRC}/spline")
 
 find_package(Eigen3 3.1.0 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -43,11 +45,15 @@ ${SRC}/numericTools/geometry2D.cpp
 )
 
 add_library(IO
-${SRC}/io/ioEigen.cpp
-${SRC}/io/utilities.cpp
+${SRCBEM}/io/ioEigen.cpp
+${SRCBEM}/io/utilities.cpp
 )
 
-add_library(BEM ${SRC}/boundaryElement.cpp ${SRC}/element.cpp ${SRC}/spline/quinticSpline.cpp)
+add_library(BEM 
+${SRCBEM}/boundaryElement.cpp 
+${SRCBEM}/element.cpp 
+${SRC}/spline/quinticSpline.cpp
+)
 
 
 if (TEST_NUMERICTOOLS)
@@ -81,6 +87,7 @@ target_link_libraries(testBEMIntegral
 PUBLIC 
 BEM
 NumericTools
+IO
 ${EIGEN3_LIBS}
 )
 
@@ -89,6 +96,7 @@ target_link_libraries(testBEMAssemble
 PUBLIC 
 BEM
 NumericTools
+IO
 ${EIGEN3_LIBS}
 OpenMP::OpenMP_CXX
 )
@@ -98,15 +106,12 @@ target_link_libraries(testBEMMixed
 PUBLIC 
 BEM
 NumericTools
+IO
 ${EIGEN3_LIBS}
 OpenMP::OpenMP_CXX
 )
 
-
 endif (TEST_BEM)
-
-
-
 
 add_executable(testBEMCone ${ROOT}/dev/testBEMCone.cpp)
 target_link_libraries(testBEMCone 

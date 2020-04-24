@@ -1,4 +1,4 @@
-#include "io/utilities.hpp"
+#include "utilities.hpp"
 #include <iostream>
 #include <omp.h>
 

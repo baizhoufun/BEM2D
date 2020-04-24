@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
-#include "boundaryElement.hpp"
+#include "bem2D/boundaryElement.hpp"
 #include "numericTools/geometry2D.hpp"
 
 Eigen::IOFormat fmt(Eigen::FullPrecision, 0, "\t", "\n", "", "", "", "");

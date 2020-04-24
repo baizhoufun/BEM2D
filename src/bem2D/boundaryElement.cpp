@@ -80,7 +80,6 @@ void BoundaryElement::initialize()
 
 void BoundaryElement::swapSDLR(const Eigen::MatrixXd &S, const Eigen::MatrixXd &D, int nSwap, Eigen::MatrixXd &L, Eigen::MatrixXd &R)
 {
-
     int m = S.rows() - nSwap;
     L.topLeftCorner(nSwap, nSwap) = D.topLeftCorner(nSwap, nSwap);
     L.topRightCorner(nSwap, m) = -S.topRightCorner(nSwap, m);
@@ -720,10 +719,6 @@ void BoundaryElement::auxFunction_fKE(double rp, double zp, double r, double z, 
     {
     case BoundaryElement::GradType::Dr:
     {
-        //f_single_E = (0.5 * (pow(r, 3) - r * (rp + z - zp) * (rp - z + zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
-        //f_single_K = (-0.5 * r) / (M_PI * rp * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
-        //f_double_E = (0.5 * (dz * (pow(r, 6) - pow(r, 4) * (pow(rp, 2) - 2. * pow(z - zp, 2)) + pow(rp, 2) * pow(pow(rp, 2) + pow(z - zp, 2), 2) + pow(r, 2) * (-pow(rp, 4) - 12. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4))) - dr * r * (pow(r, 4) - 7. * pow(rp, 4) + 2. * pow(r, 2) * (3. * pow(rp, 2) + pow(z - zp, 2)) - 6. * pow(rp, 2) * pow(z - zp, 2) + pow(z - zp, 4)) * (z - zp))) / (M_PI * rp * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
-        //f_double_K = (0.5 * (-dz * (pow(r, 4) + pow(r, 2) * (-2. * pow(rp, 2) + pow(z - zp, 2)) + pow(rp, 2) * (pow(rp, 2) + pow(z - zp, 2))) + dr * r * (pow(r, 2) - pow(rp, 2) + pow(z - zp, 2)) * (z - zp))) / (M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
         f_single_K = -r / (2. * M_PI * rp * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
         f_single_E = (pow(r, 3) - r * (rp + z - zp) * (rp - z + zp)) / (2. * M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
         f_double_K = (-(dz * (pow(r, 4) + pow(r, 2) * (-2 * pow(rp, 2) + pow(z - zp, 2)) + pow(rp, 2) * (pow(rp, 2) + pow(z - zp, 2)))) + dr * r * (pow(r, 2) - pow(rp, 2) + pow(z - zp, 2)) * (z - zp)) / (2. * M_PI * rp * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
@@ -732,12 +727,6 @@ void BoundaryElement::auxFunction_fKE(double rp, double zp, double r, double z, 
     }
     case BoundaryElement::GradType::Dz:
     {
-        //f_single_K = 0;
-        //f_single_K
-        //f_single_K = -0.5 / (M_PI*rp*sqrt(pow(r, 2) + 2.*r*rp + pow(rp, 2) + pow(z - zp, 2)));
-        //f_single_E = (r * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
-        //f_double_E = (0.5 * (2. * dr * r * (pow(r, 4) - 2. * pow(r, 2) * (pow(rp, 2) + pow(z - zp, 2)) + (pow(rp, 2) - 3. * pow(z - zp, 2)) * (pow(rp, 2) + pow(z - zp, 2))) - dz * (z - zp) * (-7. * pow(r, 4) + pow(pow(rp, 2) + pow(z - zp, 2), 2) + 6. * pow(r, 2) * (rp + z - zp) * (rp - z + zp)))) / (M_PI * pow(pow(r - rp, 2) + pow(z - zp, 2), 2) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
-        //f_double_K = (0.5 * (dz * (-pow(r, 2) + pow(rp, 2) + pow(z - zp, 2)) + 2. * dr * r * (z - zp)) * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
         f_single_K = 0;
         f_single_E = (r * (z - zp)) / (M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * sqrt(pow(r + rp, 2) + pow(z - zp, 2)));
         f_double_K = ((dz * (-pow(r, 2) + pow(rp, 2) + pow(z - zp, 2)) + 2 * dr * r * (z - zp)) * (z - zp)) / (2. * M_PI * (pow(r - rp, 2) + pow(z - zp, 2)) * pow(pow(r + rp, 2) + pow(z - zp, 2), 1.5));
@@ -781,10 +770,6 @@ void BoundaryElement::scan(const BoundaryElement &bem0, const BoundaryElement &b
         field.setZero();
         field = BoundaryElement::interiorField(rp, zp, bem0, q, p);
         field += BoundaryElement::interiorField(rp, zp, bem1, q, p);
-        //fieldDr = BoundaryElement::assemblyDr(rp, zp, bem0, q, p);
-        //fieldDr += BoundaryElement::assemblyDr(rp, zp, bem1, q, p);
-        //fieldDz = BoundaryElement::assemblyDz(rp, zp, bem0, q, p);
-        //fieldDz += BoundaryElement::assemblyDz(rp, zp, bem1, q, p);
         outputMat(row, 0) = rp;
         outputMat(row, 1) = zp;
         outputMat(row, 2) = field(0);
@@ -817,11 +802,6 @@ void BoundaryElement::scan(const BoundaryElement &bem0, const BoundaryElement &b
     }
 
     io::IOEigen::write(outputFile, outputMat);
-
-    // std::ofstream file(outputFile);
-    // Eigen::IOFormat fmt(Eigen::FullPrecision, 0, "\t", "\n", "", "", "", "");
-    // file << outputMat.format(fmt);
-    // file.close();
 };
 
 } // namespace bem2D

@@ -3,7 +3,7 @@
 #include <omp.h>
 #include <iostream>
 
-#include "io/ioEigen.hpp"
+#include "ioEigen.hpp"
 
 #define MAXBUFSIZE ((int)1e6)
 
@@ -69,7 +69,7 @@ void IOEigen::write(const std::string &fileName, const std::vector<Eigen::Vector
     } while (dataLength);
 
 #pragma omp parallel for num_threads(4)
-    for (int i = 0; i < fContainer.size(); i += k)
+    for (int i = 0; i < static_cast<int>(fContainer.size()); i += k)
     {
         int number_of_zeros = number_of_digits - std::to_string(i).length();
         std::ofstream localfile(fileName + std::string(number_of_zeros, '0').append(std::to_string(i)) + ".txt");

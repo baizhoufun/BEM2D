@@ -176,7 +176,7 @@ double Geometry2D::c3Cone(double r, double rc, const double (&c)[5])
 
 double Geometry2D::curvatureC3Cone(double r, double rc, const double (&c)[5])
 {
-    double f0 = (231 * c[4]) / (16. * pow(rc, 5)) + (1045 * c[3]) / (128. * pow(rc, 3.5)) + (195 * c[1]) / (128. * sqrt(rc)) + (5 * c[0] * rc) / 16.;
+    //double f0 = (231 * c[4]) / (16. * pow(rc, 5)) + (1045 * c[3]) / (128. * pow(rc, 3.5)) + (195 * c[1]) / (128. * sqrt(rc)) + (5 * c[0] * rc) / 16.;
     double f2 = (-495 * c[4]) / (16. * pow(rc, 7)) - (1995 * c[3]) / (128. * pow(rc, 5.5)) - (117 * c[1]) / (128. * pow(rc, 2.5)) + (15 * c[0]) / (16. * rc);
     double f4 = (385 * c[4]) / (16. * pow(rc, 9)) + (1463 * c[3]) / (128. * pow(rc, 7.5)) + (65 * c[1]) / (128. * pow(rc, 4.5)) - (5 * c[0]) / (16. * pow(rc, 3));
     double f6 = (-105 * c[4]) / (16. * pow(rc, 11)) - (385 * c[3]) / (128. * pow(rc, 9.5)) - (15 * c[1]) / (128. * pow(rc, 6.5)) + c[0] / (16. * pow(rc, 5));
