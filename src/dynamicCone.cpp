@@ -2,7 +2,10 @@
 #include "numericTools/geometry2D.hpp"
 #include "numericTools/quadratureRules.hpp"
 
-void DynamicCone::computeABC(const double c1, const double b0, double *a, double *b, double *c)
+namespace dynamicCone
+{
+
+void PatchedCone::computeABC(const double c1, const double b0, double *a, double *b, double *c)
 {
     a[0] = 2.7142175397111330 * c1;
     b[0] = b0;
@@ -25,7 +28,7 @@ void DynamicCone::computeABC(const double c1, const double b0, double *a, double
     b[4] = -0.957571779297224 * b0 + 1.057203241210380 * pow(b0, 3.0) - 0.291800238214520 * pow(b0, 5.0) + 16.866940785206700 * b0 * c1 * c1 - 10.154738911572600 * pow(b0, 3.0) * c1 * c1 - 64.833275833138900 * b0 * pow(c1, 4.0);
 };
 
-double DynamicCone::farFieldVelocityPotential(double r, double z, const double (&a)[5])
+double PatchedCone::farFieldVelocityPotential(double r, double z, const double (&a)[5])
 {
     double phi_ = 0, phi_tmp = 0, dPhiDr_, dPhiDz_;
     numericTools::Geometry2D::zonalHarmonics(r, -z, 0,
@@ -51,7 +54,7 @@ double DynamicCone::farFieldVelocityPotential(double r, double z, const double (
     return phi_;
 };
 
-double DynamicCone::farFieldElectricFlux(double nr, double nz, double r, double z, const double (&b)[5])
+double PatchedCone::farFieldElectricFlux(double nr, double nz, double r, double z, const double (&b)[5])
 {
     double phi_tmp = 0, dPhiDn_ = 0, dPhiDz_tmp = 0, dPhiDr_tmp = 0;
     numericTools::Geometry2D::zonalHarmonics(r, z, 0,
@@ -77,7 +80,7 @@ double DynamicCone::farFieldElectricFlux(double nr, double nz, double r, double 
     return dPhiDn_;
 };
 
-Eigen::VectorXd DynamicCone::setVacuumBC(const bem2D::BoundaryElement &interface, const bem2D::BoundaryElement &vacuum) const
+Eigen::VectorXd PatchedCone::setVacuumBC(const bem2D::BoundaryElement &interface, const bem2D::BoundaryElement &vacuum) const
 {
     int nCone = interface.node().size();
     int nPatch = vacuum.node().size();
@@ -86,7 +89,7 @@ Eigen::VectorXd DynamicCone::setVacuumBC(const bem2D::BoundaryElement &interface
     vacuumBC.setZero(nTotal);
     for (int k = 0; k < nTotal; k++)
     { // vacuum domain boundary  value problem (6.59)
-        double r, z, dr, dz, ddr, ddz, nr, nz;
+        double r, z, dr, dz, nr, nz;
 
         if (k < nCone)
             vacuumBC(k) = 0.0;
@@ -97,13 +100,13 @@ Eigen::VectorXd DynamicCone::setVacuumBC(const bem2D::BoundaryElement &interface
             dr = vacuum.node()[k - nCone].dx;
             dz = vacuum.node()[k - nCone].dy;
             numericTools::Geometry2D::nrnz(dr, dz, nr, nz);
-            vacuumBC(k) = farFieldElectricFlux(nr, nz, r, z, parameter.b);
+            vacuumBC(k) = farFieldElectricFlux(nr, nz, r, z, parameter().b);
         }
     }
     return vacuumBC;
 };
 
-Eigen::VectorXd DynamicCone::setLiquidBC(const bem2D::BoundaryElement &interface, const bem2D::BoundaryElement &liquid) const
+Eigen::VectorXd PatchedCone::setLiquidBC(const bem2D::BoundaryElement &interface, const bem2D::BoundaryElement &liquid) const
 {
 
     int nCone = interface.node().size();
@@ -114,7 +117,7 @@ Eigen::VectorXd DynamicCone::setLiquidBC(const bem2D::BoundaryElement &interface
     liquidBC.setZero(nTotal);
     for (int k = 0; k < nTotal; k++)
     { // liquid domain boundary value problem (6.58)
-        double r, z, dr, dz, ddr, ddz, nr, nz;
+        double r, z, dr, dz, nr, nz;
         if (k < nCone)
         {
             r = liquid.node()[k - nCone].x;
@@ -128,23 +131,29 @@ Eigen::VectorXd DynamicCone::setLiquidBC(const bem2D::BoundaryElement &interface
         {
             r = liquid.node()[k - nCone].x;
             z = liquid.node()[k - nCone].y;
-            liquidBC(k) = farFieldVelocityPotential(r, z, parameter.a);
+            liquidBC(k) = farFieldVelocityPotential(r, z, parameter().a);
         }
     }
     return liquidBC;
 };
 
-double DynamicCone::farFieldShape(double r, const double (&c)[5])
+void PatchedCone::solveBVP(
+    const bem2D::BoundaryElement &bem0, const Eigen::VectorXd &given, BoundaryType type,
+    const Eigen::MatrixXd &S, const Eigen::MatrixXd &D, Eigen::VectorXd &p, Eigen::VectorXd &q)
+{
+}
+
+double PatchedCone::farFieldShape(double r, const double (&c)[5])
 {
     return c[0] * r + c[1] / sqrt(r) + c[3] / pow(r, 3.5) + c[4] / pow(r, 5.0);
 };
 
-double DynamicCone::farFieldShapeDr(double r, const double (&c)[5])
+double PatchedCone::farFieldShapeDr(double r, const double (&c)[5])
 {
     return c[0] - (5.0 * c[4]) / pow(r, 6.0) - (7 * c[3]) / (2. * pow(r, 4.5)) - c[1] / (2. * pow(r, 1.5));
 };
 
-double DynamicCone::farFieldShapeArc(double r0, double r1, const double (&c)[5])
+double PatchedCone::farFieldShapeArc(double r0, double r1, const double (&c)[5])
 {
     const int nqd = 16;
     const double *ab;
@@ -163,3 +172,138 @@ double DynamicCone::farFieldShapeArc(double r0, double r1, const double (&c)[5])
 
     return arc;
 };
+
+const Eigen::MatrixXd PatchedCone::farFieldShapePadding(double rEnd, double rIncrement) const // STILL WORKING ON
+{
+    Eigen::MatrixXd pad;
+    pad.resize(5, 2);
+    pad.setZero();
+    pad(0, 0) = 0;
+
+    pad(0, 1) = farFieldVelocityPotential(rEnd, farFieldShape(rEnd, parameter().c), parameter().a);
+
+    for (int k = 1; k < 5; k++)
+    {
+        double rNow = rEnd + k * rIncrement;
+        double zNow = farFieldShape(rNow, parameter().c);
+        double rLast = rEnd + (k - 1) * rIncrement;
+
+        pad(k, 0) = pad(k - 1, 0) + farFieldShapeArc(rLast, rNow, parameter().c);
+        pad(k, 1) = farFieldVelocityPotential(rNow, zNow, parameter().a);
+    }
+    return pad;
+}
+
+PatchedCone::PatchedCone(double c1, double b0, double rCut, int n0, int n1, int n2)
+{
+    computeABC(c1, b0, _parameter.a, _parameter.b, _parameter.c);
+    _parameter.rCutoff = rCut;
+    _parameter.splineNodeNumber[0] = n0;
+    _parameter.splineNodeNumber[1] = n1;
+    _parameter.splineNodeNumber[2] = n2;
+
+    Eigen::MatrixXd knot[3];
+    knot[0] = numericTools::Geometry2D::c3Cone(
+        parameter().rc, parameter().rCutoff, parameter().c, parameter().splineNodeNumber[0]);
+    knot[1] = numericTools::Geometry2D::circle(
+        knot[0](knot[0].rows() - 1, 0),
+        knot[0](knot[0].rows() - 1, 1),
+        parameter().splineNodeNumber[1], numericTools::CircleType::DownWrap);
+    knot[2] = numericTools::Geometry2D::circle(
+        knot[0](knot[0].rows() - 1, 0),
+        knot[0](knot[0].rows() - 1, 1),
+        parameter().splineNodeNumber[2],
+        numericTools::CircleType::UpWrap);
+
+    setBoundaryElement(BoundaryType::Interface, knot[0], 0);
+    setBoundaryElement(BoundaryType::Liquid, knot[1], 0);
+    setBoundaryElement(BoundaryType::Vacuum, knot[2], 0);
+
+    for (int k = 0; k <= 2; k++)
+        _parameter.n[k] = _bem[k].node().size();
+    _bem[0].indexShift(0);
+    _bem[1].indexShift(parameter().n[0]);
+    _bem[2].indexShift(parameter().n[0]);
+};
+
+void PatchedCone::printABC(const std::string &name) const
+{
+    const double *a = parameter().a;
+    const double *b = parameter().b;
+    const double *c = parameter().c;
+    printf("%+18.15f\t%+18.15f\t%+18.15f\t%+18.15f\t%+18.15f\t\n", a[0], a[1], a[2], a[3], a[4]);
+    printf("%+18.15f\t%+18.15f\t%+18.15f\t%+18.15f\t%+18.15f\t\n", b[0], b[1], b[2], b[3], b[4]);
+    printf("%+18.15f\t%+18.15f\t%+18.15f\t%+18.15f\t%+18.15f\t\n", c[0], c[1], c[2], c[3], c[4]);
+
+    //Eigen::MatrixXd outputMat(3, 5);
+    //outputMat.row(0) << a[0], a[1], a[2], a[3], a[4];
+    //outputMat.row(1) << b[0], b[1], b[2], b[3], b[4];
+    //outputMat.row(2) << c[0], c[1], c[2], c[3], c[4];
+
+    //Bem::writeMatrix(name, outputMat);
+    //    printf("wtf %d\t%d\t%d\n", _bem[0].sp().node().rows(), _bem[1].sp().node().rows(), _bem[2].sp().node().rows());
+    //printf("wtf %d\t%d\t%d\n", parameter().n[0], parameter().n[1], parameter().n[2]);
+}
+
+const PatchedCone::Parameter &PatchedCone::parameter() const
+{
+    return _parameter;
+}; // 1st coordinate
+
+void PatchedCone::setBoundaryElement(BoundaryType type, const Eigen::MatrixX2d &xy, int shift)
+{
+    switch (type)
+    {
+    case BoundaryType::Interface:
+    {
+        double dx, dy, ddx, ddy;
+        // auto knot = numericTools::Geometry2D::c3Cone(parameter().rc, parameter().rCutoff,
+        //                                              parameter().c, parameter().n[0]);
+        _bem[0].sp().init(xy);
+        numericTools::Geometry2D::estimateDerivativeConeEnd(xy, parameter().c, dx, ddx, dy, ddy);
+        _bem[0].sp().setNode();
+        _bem[0].sp().setBC(0, spline::BCType::Odd, spline::BCType::Mix, 0, 0, dx, ddx);
+        _bem[0].sp().setBC(1, spline::BCType::Even, spline::BCType::Mix, 0, 0, dy, ddy);
+        _bem[0].sp().update();
+
+        _bem[0].quadratureOrder(16);
+        _bem[0].elementOrder(2);
+        _bem[0].initialize();
+
+        break;
+    }
+    case BoundaryType::Vacuum:
+    {
+        double dx, dy, ddx, ddy;
+        _bem[2].sp().init(xy);
+        numericTools::Geometry2D::estimateDerivativeCircleBegin(xy, dx, ddx, dy, ddy);
+        _bem[2].sp().setNode();
+        _bem[2].sp().setBC(0, spline::BCType::Mix, spline::BCType::Odd, dx, ddx, 0, 0);
+        _bem[2].sp().setBC(1, spline::BCType::Mix, spline::BCType::Even, dy, ddy, 0, 0);
+        _bem[2].sp().update();
+
+        _bem[2].quadratureOrder(16);
+        _bem[2].elementOrder(2);
+        _bem[2].initialize();
+        break;
+    }
+    case BoundaryType::Liquid:
+    {
+        double dx, dy, ddx, ddy;
+        _bem[1].sp().init(xy);
+        numericTools::Geometry2D::estimateDerivativeCircleBegin(xy, dx, ddx, dy, ddy);
+        _bem[1].sp().setNode();
+        _bem[1].sp().setBC(0, spline::BCType::Mix, spline::BCType::Odd, dx, ddx, 0, 0);
+        _bem[1].sp().setBC(1, spline::BCType::Mix, spline::BCType::Even, dy, ddy, 0, 0);
+        _bem[1].sp().update();
+
+        _bem[1].quadratureOrder(16);
+        _bem[1].elementOrder(2);
+        _bem[1].initialize();
+        break;
+    }
+    default:
+        break;
+    }
+};
+} // namespace dynamicCone

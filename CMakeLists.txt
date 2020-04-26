@@ -3,7 +3,6 @@ cmake_minimum_required (VERSION 3.9)
 option (TEST_NUMERICTOOLS       "" ON)
 option (TEST_BEM      "" ON)
 option (TEST_DEBUG      "" OFF)
-option (TEST_CURRENT       "" ON)
 
 if (TEST_DEBUG)
 set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUG")
@@ -20,8 +19,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 endif()
-
-
 
 add_compile_options(-std=c++11 -O3 -Wall -fopenmp)
 
@@ -53,6 +50,11 @@ add_library(BEM
 ${SRCBEM}/boundaryElement.cpp 
 ${SRCBEM}/element.cpp 
 ${SRC}/spline/quinticSpline.cpp
+)
+
+add_library(DYNAMICCONE 
+${SRCBEM}/boundaryElement.cpp 
+${SRC}/dynamicCone.cpp
 )
 
 
@@ -111,11 +113,24 @@ ${EIGEN3_LIBS}
 OpenMP::OpenMP_CXX
 )
 
-endif (TEST_BEM)
-
 add_executable(testBEMCone ${ROOT}/dev/testBEMCone.cpp)
 target_link_libraries(testBEMCone 
 PUBLIC 
+BEM
+NumericTools
+IO
+${EIGEN3_LIBS}
+OpenMP::OpenMP_CXX
+)
+
+endif (TEST_BEM)
+
+
+add_executable(testDynamicCone ${ROOT}/dev/testDynamicCone.cpp)
+
+target_link_libraries(testDynamicCone 
+PUBLIC 
+DYNAMICCONE
 BEM
 NumericTools
 IO
