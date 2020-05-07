@@ -21,3 +21,7 @@ cd build
 cmake ..
 make -j4
 ```
+
+## Class inclusion
+
+![](./resources/dependency.png)
