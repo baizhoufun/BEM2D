@@ -106,6 +106,7 @@ void Geometry2D::zonalHarmonics(double r, double z, int L, LegendrePolyType lTyp
     double cosTheta = Geometry2D::cosTheta(r, z);
 
     double Pl = LegendrePoly::legendreP(L, cosTheta, lType);
+    //if (L == 0 && hType == HarmonicType::Inner)         printf("pl\t%12.12f\t%12.12f\n", r, cosTheta);
     double Pl1 = LegendrePoly::legendreP(L + 1, cosTheta, lType);
 
     double l = (double)L;

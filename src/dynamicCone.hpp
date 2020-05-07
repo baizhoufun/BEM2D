@@ -52,6 +52,7 @@ private:
     static double farFieldShape(double r, const double (&c)[5]);
     static double farFieldShapeDr(double r, const double (&c)[5]);
     static double farFieldShapeArc(double r0, double r1, const double (&c)[5]);
+    static void rearrangeNodalVectors(const Eigen::VectorXd &u0, const Eigen::VectorXd &u1, int n0, Eigen::VectorXd &v0, Eigen::VectorXd &v1);
 };
 } // namespace dynamicCone
 

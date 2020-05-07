@@ -30,27 +30,28 @@ void PatchedCone::computeABC(const double c1, const double b0, double *a, double
 
 double PatchedCone::farFieldVelocityPotential(double r, double z, const double (&a)[5])
 {
-    double phi_ = 0, phi_tmp = 0, dPhiDr_, dPhiDz_;
-    numericTools::Geometry2D::zonalHarmonics(r, -z, 0,
+    double phi_ = 0, phi_tmp = 0, dPhiDr_ = 0, dPhiDz_ = 0;
+    numericTools::Geometry2D::zonalHarmonics(r, z, 0,
                                              numericTools::LegendrePolyType::HALF_INTEGER, numericTools::HarmonicType::Inner,
                                              phi_tmp, dPhiDr_, dPhiDz_);
     phi_ += a[0] * phi_tmp;
-    numericTools::Geometry2D::zonalHarmonics(r, -z, 0,
+    numericTools::Geometry2D::zonalHarmonics(r, z, 0,
                                              numericTools::LegendrePolyType::INTEGER, numericTools::HarmonicType::Outer,
                                              phi_tmp, dPhiDr_, dPhiDz_);
     phi_ += a[1] * phi_tmp;
-    numericTools::Geometry2D::zonalHarmonics(r, -z, 1,
-                                             numericTools::LegendrePolyType::HALF_INTEGER, numericTools::HarmonicType::Outer,
-                                             phi_tmp, dPhiDr_, dPhiDz_);
-    phi_ += a[2] * phi_tmp;
-    numericTools::Geometry2D::zonalHarmonics(r, -z, 3,
-                                             numericTools::LegendrePolyType::INTEGER, numericTools::HarmonicType::Outer,
-                                             phi_tmp, dPhiDr_, dPhiDz_);
-    phi_ += a[3] * phi_tmp;
-    numericTools::Geometry2D::zonalHarmonics(r, -z, 4,
-                                             numericTools::LegendrePolyType::HALF_INTEGER, numericTools::HarmonicType::Outer,
-                                             phi_tmp, dPhiDr_, dPhiDz_);
+    // numericTools::Geometry2D::zonalHarmonics(r, z, 1,
+    //                                          numericTools::LegendrePolyType::HALF_INTEGER, numericTools::HarmonicType::Outer,
+    //                                          phi_tmp, dPhiDr_, dPhiDz_);
+    // phi_ += a[2] * phi_tmp;
+    // numericTools::Geometry2D::zonalHarmonics(r, z, 3,
+    //                                          numericTools::LegendrePolyType::INTEGER, numericTools::HarmonicType::Outer,
+    //                                          phi_tmp, dPhiDr_, dPhiDz_);
+    // phi_ += a[3] * phi_tmp;
+    // numericTools::Geometry2D::zonalHarmonics(r, z, 4,
+    //                                          numericTools::LegendrePolyType::HALF_INTEGER, numericTools::HarmonicType::Outer,
+    //                                          phi_tmp, dPhiDr_, dPhiDz_);
     phi_ += a[4] * phi_tmp;
+    //printf("%f\n", phi_);
     return phi_;
 };
 
@@ -60,6 +61,7 @@ double PatchedCone::farFieldElectricFlux(double nr, double nz, double r, double 
     numericTools::Geometry2D::zonalHarmonics(r, z, 0,
                                              numericTools::LegendrePolyType::HALF_INTEGER, numericTools::HarmonicType::Inner,
                                              phi_tmp, dPhiDr_tmp, dPhiDz_tmp);
+    //printf("%16.16f\t%16.16f\t%16.16f\n", phi_tmp, dPhiDr_tmp, dPhiDz_tmp);
     dPhiDn_ += b[0] * (nr * dPhiDr_tmp + nz * dPhiDz_tmp);
     numericTools::Geometry2D::zonalHarmonics(r, z, 0,
                                              numericTools::LegendrePolyType::INTEGER, numericTools::HarmonicType::Outer,
@@ -92,7 +94,17 @@ Eigen::VectorXd PatchedCone::setVacuumBC(const bem2D::BoundaryElement &interface
         double r, z, dr, dz, nr, nz;
 
         if (k < nCone)
-            vacuumBC(k) = 0.0;
+        {
+            r = interface.node()[k].x;
+            z = interface.node()[k].y;
+            //dr = interface.node()[k].dx;
+            //dz = interface.node()[k].dy;
+            //vacuumBC(k) = 0.0;
+
+            vacuumBC(k) = farFieldVelocityPotential(r, z, parameter().b);
+            printf("%12.12f\n", vacuumBC(k));
+        }
+
         else
         {
             r = vacuum.node()[k - nCone].x;
@@ -139,9 +151,77 @@ Eigen::VectorXd PatchedCone::setLiquidBC(const bem2D::BoundaryElement &interface
 
 void PatchedCone::solveBVP(
     const bem2D::BoundaryElement &bem0, const Eigen::VectorXd &given, BoundaryType type,
-    const Eigen::MatrixXd &S, const Eigen::MatrixXd &D, Eigen::VectorXd &p, Eigen::VectorXd &q)
+    const Eigen::MatrixXd &SRaw, const Eigen::MatrixXd &DRaw, Eigen::VectorXd &p, Eigen::VectorXd &q)
 {
+    int nTotal = 0;
+    const int &n0 = parameter().n[0];
+    if (type == BoundaryType::Liquid)
+        nTotal = n0 + parameter().n[1];
+    else if (type == BoundaryType::Vacuum)
+        nTotal = n0 + parameter().n[2];
+
+    Eigen::MatrixXd L, R, D, S;
+    Eigen::VectorXd diagB;
+    R.setZero(nTotal, nTotal);
+    L.setZero(nTotal, nTotal);
+    D.setZero(nTotal, nTotal);
+    S.setZero(nTotal, nTotal);
+    diagB.setZero(nTotal);
+    diagB.setOnes();
+
+    if (type == BoundaryType::Liquid)
+        D = DRaw;
+    else if (type == BoundaryType::Vacuum)
+        D = -DRaw;
+    S = SRaw;
+
+    diagB = diagB * 0.5;
+    diagB(n0 - 1) = -D.row(n0 - 1).sum();
+    diagB(n0) = -D.row(n0).sum();
+    for (int k = 0; k < D.rows(); k++)
+        D(k, k) += diagB(k); // equation (7.80)
+
+    D.row(n0 - 1) *= 0.;
+    D(n0 - 1, n0 - 1) = 1.0;
+    D(n0 - 1, n0) = -1.0;
+    S.row(n0 - 1) *= 0.;
+
+    bem2D::BoundaryElement::swapSDLR(S, D, n0, L, R);
+
+    Eigen::VectorXd answer;
+    answer.setZero(nTotal);
+    p.setZero(nTotal);
+    q.setZero(nTotal);
+
+    if (type == BoundaryType::Liquid)
+    {
+        answer = L.partialPivLu().solve(R * given);
+        rearrangeNodalVectors(answer, given, n0, p, q);
+    }
+    else if (type == BoundaryType::Vacuum)
+    {
+        answer = R.partialPivLu().solve(L * given);
+        rearrangeNodalVectors(given, answer, n0, p, q);
+    }
 }
+
+void PatchedCone::rearrangeNodalVectors(const Eigen::VectorXd &u0, const Eigen::VectorXd &u1, int n0, Eigen::VectorXd &v0, Eigen::VectorXd &v1)
+{
+    int nTotal = v0.size();
+    for (int k = 0; k < nTotal; k++)
+    {
+        if (k < n0)
+        {
+            v0(k) = u0(k);
+            v1(k) = u1(k);
+        }
+        else
+        {
+            v0(k) = u1(k);
+            v1(k) = u0(k);
+        }
+    }
+};
 
 double PatchedCone::farFieldShape(double r, const double (&c)[5])
 {
